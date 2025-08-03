@@ -1,98 +1,201 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Helpdesk API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A learning-oriented Helpdesk API with clean layering, type-safe data access, and production-style workflows (migrations, seeding, pagination, RBAC-ready).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech Stack
 
-## Description
+- **Runtime**: Node.js 20+
+- **Framework**: NestJS
+- **ORM**: Prisma
+- **Database**: PostgreSQL 16 (Docker)
+- **Language**: TypeScript
+- **Tooling**: Docker Compose, class-validator, JWT-ready
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
 
-## Project setup
+### Current
+- Domain models: Organization, User, Ticket, Comment
+- Cursor pagination for ticket lists
+- Prisma migrations and Studio
+- Ready for RBAC (roles: customer, agent, admin)
+- Optimistic locking field on tickets (version)
 
+### Planned
+- JWT auth & guards (org scoping)
+- Request validation & DTOs everywhere
+- Better indices & SQL optimizations
+
+## Quick Start
+
+### Prerequisites
+- Node 20+, npm 10+
+- Docker Desktop (or Docker Engine) running
+
+### 1. Clone & Install
 ```bash
-$ npm install
+git clone <your-repo-url> helpdesk-api
+cd helpdesk-api
+npm install
 ```
 
-## Compile and run the project
+### 2. Start PostgreSQL (Docker)
+The project includes a `docker-compose.yml` file:
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```yaml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: helpdesk
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d helpdesk"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  pg_data:
 ```
 
-## Run tests
-
+Start the database:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose up -d
 ```
 
-## Deployment
+> **Note**: If you already have a local Postgres on port 5432, either stop it or map to `5433:5432` and update `.env` accordingly.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### 3. Environment Variables
+Create a `.env` file in the project root:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+```ini
+# Use 127.0.0.1 to force TCP (avoids socket/peer auth quirks)
+DATABASE_URL="postgresql://app:app@127.0.0.1:5432/helpdesk?schema=public"
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Optional: make Prisma migrations more robust locally
+# SHADOW_DATABASE_URL="postgresql://app:app@127.0.0.1:5432/postgres?schema=public"
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4. Prisma: Migrate & Generate
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
 
-## Resources
+# Optional GUI:
+npx prisma studio
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### 5. Seed Minimal Data (Optional)
+```bash
+npm run seed
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 6. Run the API
+```bash
+npm run dev
+# Server should be available at http://localhost:3000
+```
 
-## Support
+## NPM Scripts
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```json
+{
+  "scripts": {
+    "dev": "nest start --watch",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:format": "prisma format",
+    "seed": "ts-node prisma/seed.ts"
+  }
+}
+```
 
-## Stay in touch
+## Project Structure
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```
+src/
+  app.module.ts
+  main.ts
+  prisma/
+    prisma.module.ts
+    prisma.service.ts
+  tickets/
+    tickets.module.ts
+    tickets.controller.ts
+    tickets.service.ts
+    dto/
+      create-ticket.dto.ts
+prisma/
+  schema.prisma
+  migrations/
+  seed.ts
+docker-compose.yml
+.env
+```
 
-## License
+## Database Model
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Tables
+- **Organization**: `id`, `name`, `slug`, `createdAt`
+- **User**: `id`, `email` (unique), `password`, `role` (customer|agent|admin), `orgId`
+- **Ticket**: `id`, `title`, `content?`, `status`, `priority`, `version`, `assigneeId?`, `reporterId`, `orgId`, timestamps
+- **Comment**: `id`, `ticketId`, `authorId`, `body`, `createdAt`
+
+### Indexes
+Optimized for common queries:
+- **Ticket**: `@@index([orgId, status, priority, createdAt])`
+
+## API Examples
+
+### Create a Ticket
+```bash
+curl -X POST http://localhost:3000/tickets \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Login not working","content":"User gets 500 on login","priority":"high"}'
+```
+
+### List Tickets (Cursor Pagination)
+```bash
+curl "http://localhost:3000/tickets?limit=10"
+```
+
+Response format:
+```json
+{
+  "data": [ ...tickets ],
+  "meta": { 
+    "hasMore": true, 
+    "nextCursor": "<id>", 
+    "limit": 10 
+  }
+}
+```
+
+> **Note**: In early development, `orgId`/`reporterId` may be hardcoded until JWT auth is implemented.
+
+## Development Notes
+
+### Auth & Multitenancy (Upcoming)
+- JWT payload: `{ sub: userId, orgId, role }`
+- Guards ensure org scoping (`req.user.orgId` vs entity `orgId`)
+- Policy helpers for RBAC (e.g., who can assign/close tickets)
+
+### Optimistic Locking
+- `Ticket.version` increments on update
+- Use `where: { id, version }` to detect concurrent edits
+
+### Performance
+- Use `select`/`include` carefully to avoid N+1 queries
+- Add indexes for frequently filtered fields (status/assignee/createdAt)
+- Use `$queryRaw` for complex SQL (CTEs/window functions) when needed
+
+
+## Testing Strategy (Suggested)
+
+- **Unit**: Services & policies as pure functions
+- **Integration**: Spin up DB container; run migrations; test repositories
+- **e2e**: Nest TestingModule + supertest (auth → create ticket → comment → assign → close)
