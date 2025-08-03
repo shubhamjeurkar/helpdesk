@@ -1,0 +1,81 @@
+// prisma/schema.prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  customer
+  agent
+  admin
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  users     User[]
+  tickets   Ticket[]
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  email     String   @unique
+  role      Role
+  password  String
+  createdAt DateTime @default(now())
+  ticketsReported Ticket[] @relation("TicketsReported")
+  ticketsAssigned Ticket[] @relation("TicketsAssigned")
+  comments  Comment[]
+}
+
+model Ticket {
+  id         String   @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id])
+  reporterId String
+  reporter   User     @relation("TicketsReported", fields: [reporterId], references: [id])
+  assigneeId String?
+  assignee   User?    @relation("TicketsAssigned", fields: [assigneeId], references: [id])
+  title      String
+  content    String?
+  status     TicketStatus @default(open)
+  priority   Priority     @default(medium)
+  version    Int          @default(1) // optimistic locking
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  comments   Comment[]
+
+  @@index([orgId, status, priority, createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
