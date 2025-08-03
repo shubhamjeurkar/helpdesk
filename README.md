@@ -33,8 +33,8 @@ A learning-oriented Helpdesk API with clean layering, type-safe data access, and
 
 ### 1. Clone & Install
 ```bash
-git clone <your-repo-url> helpdesk-api
-cd helpdesk-api
+git clone https://github.com/shubhamjeurkar/helpdesk.git helpdesk
+cd helpdesk
 npm install
 ```
 
